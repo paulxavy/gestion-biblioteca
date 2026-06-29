@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Biblioteca</title>
+    <link rel="stylesheet" href="/static/styles.css">
+
+</head>
+<body>
+
+    <h1>Sistema de Gestión de Biblioteca</h1>
+
+    <div class="formulario">
+        <h2 id="titulo-formulario">Registrar Nuevo Libro</h2>
+        <input type="hidden" id="libro-id" value="">
+        <div class="campo">
+            <label for="titulo">Título:</label>
+            <input type="text" id="titulo" placeholder="Ej: Cien Años de Soledad">
+        </div>
+        <div class="campo">
+            <label for="autor">Autor:</label>
+            <input type="text" id="autor" placeholder="Ej: Gabriel García Márquez">
+        </div>
+        <div class="botones-formulario">
+            <button class="btn-agregar" id="btn-submit" onclick="enviarFormulario()">Agregar Libro</button>
+            <button class="btn-cancelar" id="btn-cancelar" onclick="cancelarEdicion()">Cancelar</button>
+        </div>
+        <div id="mensaje" class="mensaje"></div>
+    </div>
+
+    <div class="inventario">
+        <h2>Inventario de Libros</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-libros">
+            </tbody>
+        </table>
+        <p id="sin-libros" class="sin-libros" style="display: none;">No hay libros registrados aún.</p>
+    </div>
+
+    <script>
+        var modoEdicion = false;
+
+        function cargarLibros() {
+            fetch('/libros')
+                .then(function(respuesta) {
+                    return respuesta.json();
+                })
+                .then(function(libros) {
+                    var tabla = document.getElementById('tabla-libros');
+                    var mensajeSinLibros = document.getElementById('sin-libros');
+
+                    tabla.innerHTML = '';
+
+                    if (libros.length === 0) {
+                        mensajeSinLibros.style.display = 'block';
+                        return;
+                    }
+
+                    mensajeSinLibros.style.display = 'none';
+
+                    for (var i = 0; i < libros.length; i++) {
+                        var fila = document.createElement('tr');
+
+                        var estado = libros[i].disponible ? 'Disponible' : 'No disponible';
+                        var claseEstado = libros[i].disponible ? 'estado-disponible' : 'estado-no-disponible';
+
+                        fila.innerHTML =
+                            '<td>' + libros[i].id + '</td>' +
+                            '<td>' + libros[i].titulo + '</td>' +
+                            '<td>' + libros[i].autor + '</td>' +
+                            '<td><button class="btn-disponibilidad ' + claseEstado + '" onclick="cambiarDisponibilidad(' + libros[i].id + ', \'' + libros[i].titulo.replace(/'/g, "\\'") + '\', \'' + libros[i].autor.replace(/'/g, "\\'") + '\', ' + !libros[i].disponible + ')">' + estado + '</button></td>' +
+                            '<td>' +
+                                '<button class="btn-editar" onclick="editarLibro(' + libros[i].id + ', \'' + libros[i].titulo.replace(/'/g, "\\'") + '\', \'' + libros[i].autor.replace(/'/g, "\\'") + '\')">Editar</button>' +
+                                '<button class="btn-eliminar" onclick="eliminarLibro(' + libros[i].id + ', \'' + libros[i].titulo.replace(/'/g, "\\'") + '\')">Eliminar</button>' +
+                            '</td>';
+
+                        tabla.appendChild(fila);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error al cargar libros:', error);
+                });
+        }
+
+        function enviarFormulario() {
+            if (modoEdicion) {
+                actualizarLibro();
+            } else {
+                agregarLibro();
+            }
+        }
+
+        function agregarLibro() {
+            var titulo = document.getElementById('titulo').value.trim();
+            var autor = document.getElementById('autor').value.trim();
+            var divMensaje = document.getElementById('mensaje');
+
+            if (titulo === '' || autor === '') {
+                divMensaje.className = 'mensaje error';
+                divMensaje.textContent = 'Por favor, completa todos los campos.';
+                return;
+            }
+
+            fetch('/libros', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo: titulo, autor: autor })
+            })
+            .then(function(respuesta) {
+                if (!respuesta.ok) throw new Error('Error del servidor');
+                return respuesta.json();
+            })
+            .then(function(datos) {
+                mostrarMensaje('exito', 'Libro "' + titulo + '" agregado correctamente.');
+                limpiarFormulario();
+                cargarLibros();
+            })
+            .catch(function(error) {
+                mostrarMensaje('error', 'Error al agregar el libro. Inténtalo de nuevo.');
+                console.error('Error:', error);
+            });
+        }
+
+        function editarLibro(id, titulo, autor) {
+            modoEdicion = true;
+            document.getElementById('libro-id').value = id;
+            document.getElementById('titulo').value = titulo;
+            document.getElementById('autor').value = autor;
+            document.getElementById('titulo-formulario').textContent = 'Editando Libro #' + id;
+            document.getElementById('btn-submit').textContent = 'Guardar Cambios';
+            document.getElementById('btn-cancelar').style.display = 'inline-block';
+
+            document.querySelector('.formulario').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function actualizarLibro() {
+            var id = parseInt(document.getElementById('libro-id').value);
+            var titulo = document.getElementById('titulo').value.trim();
+            var autor = document.getElementById('autor').value.trim();
+            var divMensaje = document.getElementById('mensaje');
+
+            if (titulo === '' || autor === '') {
+                mostrarMensaje('error', 'Por favor, completa todos los campos.');
+                return;
+            }
+
+            fetch('/libros', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, titulo: titulo, autor: autor, disponible: true })
+            })
+            .then(function(respuesta) {
+                if (!respuesta.ok) throw new Error('Error del servidor');
+                return respuesta.json();
+            })
+            .then(function(datos) {
+                mostrarMensaje('exito', 'Libro #' + id + ' actualizado correctamente.');
+                cancelarEdicion();
+                cargarLibros();
+            })
+            .catch(function(error) {
+                mostrarMensaje('error', 'Error al actualizar el libro.');
+                console.error('Error:', error);
+            });
+        }
+
+        function eliminarLibro(id, titulo) {
+            if (!confirm('¿Estás seguro de que quieres eliminar "' + titulo + '"?')) {
+                return;
+            }
+
+            fetch('/libros?id=' + id, {
+                method: 'DELETE'
+            })
+            .then(function(respuesta) {
+                if (!respuesta.ok) throw new Error('Error del servidor');
+                return respuesta.json();
+            })
+            .then(function(datos) {
+                mostrarMensaje('exito', 'Libro "' + titulo + '" eliminado correctamente.');
+                cargarLibros();
+            })
+            .catch(function(error) {
+                mostrarMensaje('error', 'Error al eliminar el libro.');
+                console.error('Error:', error);
+            });
+        }
+
+        function cambiarDisponibilidad(id, titulo, autor, nuevoEstado) {
+            fetch('/libros', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, titulo: titulo, autor: autor, disponible: nuevoEstado })
+            })
+            .then(function(respuesta) {
+                if (!respuesta.ok) throw new Error('Error del servidor');
+                return respuesta.json();
+            })
+            .then(function(datos) {
+                var estadoTexto = nuevoEstado ? 'disponible' : 'no disponible';
+                mostrarMensaje('exito', 'Libro marcado como ' + estadoTexto + '.');
+                cargarLibros();
+            })
+            .catch(function(error) {
+                mostrarMensaje('error', 'Error al cambiar la disponibilidad.');
+                console.error('Error:', error);
+            });
+        }
+
+        function cancelarEdicion() {
+            modoEdicion = false;
+            limpiarFormulario();
+            document.getElementById('titulo-formulario').textContent = 'Registrar Nuevo Libro';
+            document.getElementById('btn-submit').textContent = 'Agregar Libro';
+            document.getElementById('btn-cancelar').style.display = 'none';
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('libro-id').value = '';
+            document.getElementById('titulo').value = '';
+            document.getElementById('autor').value = '';
+        }
+
+        function mostrarMensaje(tipo, texto) {
+            var divMensaje = document.getElementById('mensaje');
+            divMensaje.className = 'mensaje ' + tipo;
+            divMensaje.textContent = texto;
+
+            setTimeout(function() {
+                divMensaje.style.display = 'none';
+                divMensaje.className = 'mensaje';
+            }, 3000);
+        }
+
+        cargarLibros();
+    </script>
+
+</body>
+</html>
