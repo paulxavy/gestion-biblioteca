@@ -1,4 +1,4 @@
-# Sistema de Gestión de Libros Electrónicos
+# 📚 Sistema de Gestión de Libros Electrónicos
 
 ## Objetivo del Programa
 
@@ -10,16 +10,16 @@ Este proyecto es un **Sistema de Gestión de Libros Electrónicos** desarrollado
 |---|---|
 | **Registro de libros** | Permite agregar nuevos libros (título y autor) a la base de datos mediante un formulario web |
 | **Consulta de inventario** | Muestra todos los libros registrados en una tabla dinámica que se actualiza en tiempo real |
-| **API REST** | Endpoints GET /libros y POST /libros para la comunicación entre el frontend y el backend |
+| **API REST** | Endpoints `GET /libros` y `POST /libros` para la comunicación entre el frontend y el backend |
 | **Concurrencia** | Uso de Goroutines y Channels para simular la generación asíncrona de reportes |
-| **Interfaz gráfica** | Página HTML con formulario y tabla de datos, conectada al backend vía fetch |
+| **Interfaz gráfica** | Página HTML con formulario y tabla de datos, conectada al backend vía `fetch` |
 
 ## Tecnologías Utilizadas
 
 - **Go 1.21+** — Lenguaje de programación del backend
 - **PostgreSQL** — Base de datos relacional
 - **HTML/CSS/JavaScript** — Interfaz gráfica del usuario
-- **net/http** — Servidor web nativo de Go
+- **net/http** — Servidor web nativo de Go (sin frameworks externos)
 - **database/sql + pq** — Conexión nativa a PostgreSQL
 - **net/http/httptest** — Framework de testing para los endpoints
 
@@ -46,7 +46,7 @@ Primero, asegúrate de tener PostgreSQL corriendo. Luego, crea la base de datos:
 CREATE DATABASE biblioteca;
 ```
 
-Conéctate a la base de datos biblioteca y ejecuta el siguiente script para crear la tabla:
+Conéctate a la base de datos `biblioteca` y ejecuta el siguiente script para crear la tabla:
 
 ```sql
 CREATE TABLE IF NOT EXISTS libros (
@@ -57,9 +57,11 @@ CREATE TABLE IF NOT EXISTS libros (
 );
 ```
 
+> **Nota:** Este script también se encuentra en el archivo `schema.sql` del proyecto.
+
 ### 3. Configurar las variables de entorno
 
-Crea un archivo .env en la raíz del proyecto con tus credenciales:
+Crea un archivo `.env` en la raíz del proyecto (o modifica el existente) con tus credenciales:
 
 ```env
 DB_HOST=localhost
@@ -81,7 +83,7 @@ go mod tidy
 go run main.go
 ```
 
-El servidor se iniciará en http://localhost:8080. Abre esa URL en tu navegador para acceder a la interfaz gráfica.
+El servidor se iniciará en `http://localhost:8080`. Abre esa URL en tu navegador para acceder a la interfaz gráfica.
 
 ### 6. Ejecutar las pruebas
 
@@ -93,26 +95,26 @@ go test -v
 
 ```
 gestion-biblioteca/
-├── .env
-├── .gitignore
-├── go.mod
-├── go.sum
-├── main.go
-├── main_test.go
-├── schema.sql
-├── README.md
+├── .env                    # Variables de entorno (conexión a la BD)
+├── .gitignore              # Archivos ignorados por Git
+├── go.mod                  # Módulo y dependencias de Go
+├── go.sum                  # Checksums de las dependencias
+├── main.go                 # Punto de entrada (wiring de dependencias)
+├── main_test.go            # Pruebas unitarias con httptest
+├── schema.sql              # Script SQL para crear la tabla
+├── README.md               # Este archivo
 ├── config/
-│   └── database.go
+│   └── database.go         # Conexión a PostgreSQL
 ├── modelos/
-│   └── libro.go
+│   └── libro.go            # Struct Libro
 ├── interfaces/
-│   └── biblioteca.go
+│   └── biblioteca.go       # Interfaz Biblioteca
 ├── servicios/
-│   └── gestor.go
+│   └── gestor.go           # GestorBiblioteca (lógica de negocio)
 ├── handlers/
-│   └── libros.go
+│   └── libros.go           # Manejadores HTTP (endpoints)
 └── static/
-    └── index.html
+    └── index.html          # Interfaz gráfica (frontend)
 ```
 
 ## Justificación Técnica
@@ -121,20 +123,20 @@ gestion-biblioteca/
 
 Aunque Go no es un lenguaje orientado a objetos en el sentido tradicional, permite aplicar sus principios fundamentales:
 
-- **Encapsulación**: El struct GestorBiblioteca tiene un atributo privado db, lo que impide el acceso directo desde otros paquetes. Solo los métodos del gestor pueden interactuar con la base de datos.
-- **Abstracción**: La interfaz Biblioteca define un contrato con los métodos AgregarLibro y ObtenerLibros, permitiendo que cualquier struct que implemente estos métodos pueda ser utilizado de forma intercambiable.
+- **Encapsulación**: El struct `GestorBiblioteca` tiene un atributo privado `db` (con letra minúscula), lo que impide el acceso directo desde otros paquetes. Solo los métodos del gestor pueden interactuar con la base de datos.
+- **Abstracción**: La interfaz `Biblioteca` define un contrato con los métodos `AgregarLibro` y `ObtenerLibros`, permitiendo que cualquier struct que implemente estos métodos pueda ser utilizado de forma intercambiable.
 - **Polimorfismo**: Gracias a las interfaces de Go, es posible sustituir la implementación concreta sin modificar el código que depende de la interfaz.
 
 ### PostgreSQL como Base de Datos
 
-Se eligió PostgreSQL por ser un sistema de gestión de bases de datos relacional robusto, de código abierto y ampliamente utilizado en la industria. La conexión se realiza mediante el paquete nativo database/sql de Go junto con el driver lib/pq, sin necesidad de ORMs externos, lo que permite un control directo sobre las consultas SQL.
+Se eligió PostgreSQL por ser un sistema de gestión de bases de datos relacional robusto, de código abierto y ampliamente utilizado en la industria. La conexión se realiza mediante el paquete nativo `database/sql` de Go junto con el driver `lib/pq`, sin necesidad de ORMs externos, lo que permite un control directo sobre las consultas SQL.
 
 ### Concurrencia
 
-Go tiene soporte nativo para la concurrencia a través de Goroutines y Channels. En este proyecto, cuando se agrega un libro exitosamente, se lanza una goroutine que simula la generación de un reporte asíncrono. Se utiliza un canal (channel) para la comunicación y sincronización entre goroutines, demostrando el modelo de concurrencia de Go.
+Go tiene soporte nativo para la concurrencia a través de **Goroutines** y **Channels**. En este proyecto, cuando se agrega un libro exitosamente, se lanza una goroutine que simula la generación de un reporte asíncrono. Se utiliza un canal (channel) para la comunicación y sincronización entre goroutines, demostrando el modelo de concurrencia de Go: *"No te comuniques compartiendo memoria; comparte memoria comunicándote"*.
 
 ---
 
-**Autor:** Estudiante Universitario
-**Materia:** Programación Avanzada
+**Autor:** Estudiante Universitario  
+**Materia:** Programación Avanzada  
 **Año:** 2026
