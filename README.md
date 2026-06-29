@@ -1,4 +1,4 @@
-# 📚 Sistema de Gestión de Libros Electrónicos
+# Sistema de Gestión de Libros Electrónicos
 
 ## Objetivo del Programa
 
@@ -34,7 +34,7 @@ Este proyecto es un **Sistema de Gestión de Libros Electrónicos** desarrollado
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/gestion-biblioteca.git
+git clone https://github.com/paulxavy/gestion-biblioteca.git
 cd gestion-biblioteca
 ```
 
@@ -137,6 +137,6 @@ Go tiene soporte nativo para la concurrencia a través de **Goroutines** y **Cha
 
 ---
 
-**Autor:** Estudiante Universitario  
+**Autor:** Nombre 
 **Materia:** Programación Avanzada  
 **Año:** 2026
